@@ -13,7 +13,7 @@ dependencies = [
     # >>> sostituisci questa riga:
     # "sam-2[notebooks]",
     # >>> con questa (forma PEP 508 valida per pip):
-    "sam-2[notebooks] @ git+https://github.com/facebookresearch/sam2.git",
+    # "sam-2[notebooks] @ git+https://github.com/facebookresearch/sam2.git",
 
     "torch",
     "tqdm",
@@ -26,7 +26,7 @@ dependencies = [
     "scikit-learn",
     "transformers",
     "timm",
-    "segment-anything @ git+https://github.com/facebookresearch/segment-anything.git",
+    # "segment-anything @ git+https://github.com/facebookresearch/segment-anything.git",
     "torchmetrics",
     "termcolor"
 ]
@@ -41,7 +41,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["codemotion2025*"]
 
 [tool.setuptools]
 include-package-data = true
