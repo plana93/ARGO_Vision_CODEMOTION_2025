@@ -1,31 +1,31 @@
 [project]
-name = "CODEMOTION_2025"  # il nome del progetto può restare così
+name = "CODEMOTION_2025"
 version = "0.1.0"
 description = "Excercise for codemotion 2025"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "huggingface-hub>=0.29.2",
+    #"huggingface-hub>=0.29.2",
     "jupyterlab",
-    "opencv-python",
-    "pandas>=2.2.3",
+    #"opencv-python",
+    #"pandas>=2.2.3",
 
     # >>> sostituisci questa riga:
     # "sam-2[notebooks]",
     # >>> con questa (forma PEP 508 valida per pip):
     # "sam-2[notebooks] @ git+https://github.com/facebookresearch/sam2.git",
 
-    "torch",
+    #"torch",
     "tqdm",
-    "matplotlib",
+    #"matplotlib",
     "ipympl",
     "ipywidgets",
     "ipyevents",
-    "torchvision",
-    "Pillow",
-    "scikit-learn",
-    "transformers",
-    "timm",
+    #"torchvision",
+    #"Pillow",
+    #"scikit-learn",
+    #"transformers",
+    #"timm",
     # "segment-anything @ git+https://github.com/facebookresearch/segment-anything.git",
     "torchmetrics",
     "termcolor"
