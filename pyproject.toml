@@ -44,5 +44,5 @@ where = ["."]
 include = ["codemotion2025*"]
 
 [tool.setuptools]
-packages = ["codemotion2025"]
+#packages = ["codemotion2025"]
 include-package-data = true
