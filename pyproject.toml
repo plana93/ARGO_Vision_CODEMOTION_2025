@@ -1,23 +1,27 @@
 [project]
-name = "CODEMOTION_2025"
+name = "CODEMOTION_2025"  # il nome del progetto può restare così
 version = "0.1.0"
 description = "Excercise for codemotion 2025"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "huggingface>=0.0.1",
     "huggingface-hub>=0.29.2",
     "jupyterlab",
     "opencv-python",
     "pandas>=2.2.3",
-    "sam-2[notebooks]",
+
+    # >>> sostituisci questa riga:
+    # "sam-2[notebooks]",
+    # >>> con questa (forma PEP 508 valida per pip):
+    "sam-2[notebooks] @ git+https://github.com/facebookresearch/sam2.git",
+
     "torch",
     "tqdm",
     "matplotlib",
     "ipympl",
     "ipywidgets",
     "ipyevents",
-    'torchvision',
+    "torchvision",
     "Pillow",
     "scikit-learn",
     "transformers",
@@ -27,6 +31,7 @@ dependencies = [
     "termcolor"
 ]
 
+# Questa sezione uv puoi tenerla, ma sappi che pip la ignora.
 [tool.uv.sources]
 sam-2 = { git = "https://github.com/facebookresearch/sam2.git" }
 
@@ -35,8 +40,8 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["src"]          # trova i pacchetti sotto src/
-include = ["codemotion_2025*"]
+where = ["."]
+include = ["src*"]
 
 [tool.setuptools]
 include-package-data = true
