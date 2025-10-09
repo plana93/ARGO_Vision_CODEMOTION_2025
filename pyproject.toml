@@ -32,12 +32,12 @@ dependencies = [
 ]
 
 # Questa sezione uv puoi tenerla, ma sappi che pip la ignora.
-[tool.uv.sources]
-sam-2 = { git = "https://github.com/facebookresearch/sam2.git" }
+#[tool.uv.sources]
+#sam-2 = { git = "https://github.com/facebookresearch/sam2.git" }
 
-[build-system]
-requires = ["setuptools>=69", "wheel"]
-build-backend = "setuptools.build_meta"
+#[build-system]
+#requires = ["setuptools>=69", "wheel"]
+#build-backend = "setuptools.build_meta"
 
 #[tool.setuptools.packages.find]
 #where = ["."]
