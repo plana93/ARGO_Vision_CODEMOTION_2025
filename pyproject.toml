@@ -23,7 +23,7 @@ dependencies = [
     #"ipyevents",
     #"torchvision",
     #"Pillow",
-    #"scikit-learn",
+    "scikit-learn",
     #"transformers",
     #"timm",
     #"segment-anything @ git+https://github.com/facebookresearch/segment-anything.git",
