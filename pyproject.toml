@@ -3,7 +3,7 @@ name = "CODEMOTION_2025"
 version = "0.1.0"
 description = "Excercise for codemotion 2025"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     #"huggingface-hub>=0.29.2",
     "jupyterlab",
@@ -27,7 +27,7 @@ dependencies = [
     #"transformers",
     #"timm",
     # "segment-anything @ git+https://github.com/facebookresearch/segment-anything.git",
-    "torchmetrics",
+    #"torchmetrics",
     "termcolor"
 ]
 
