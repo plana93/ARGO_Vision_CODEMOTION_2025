@@ -63,6 +63,7 @@ def _strip_register_tokens(tokens: torch.Tensor, num_register_tokens: int | None
         raise ValueError(f"Cannot make square from sequence length {N}.")
     return tokens[:, :cand, :]
 
+
 def load_dinov3(
     model_variant: str = "vit_base_patch16_dinov3.lvd_1689m",
     resize_size: int = 224
