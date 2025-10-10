@@ -10,6 +10,108 @@ import timm
 import inspect
 
 
+
+import torch
+import torch.nn.functional as F
+from typing import Tuple, Optional
+
+@torch.no_grad()
+def last_layer_patch_features(
+    model: torch.nn.Module,
+    x: torch.Tensor,
+    apply_norm: bool = True,
+    verbose: bool = False,
+) -> torch.Tensor:
+    """
+    Return the last block feature map as patch-aligned tensor (B, C, Hp, Wp) from a timm ViT (incl. DINOv3).
+
+    What it does:
+      1) Runs the backbone up to the last token sequence (forward_features).
+      2) Removes ALL prefix tokens (CLS + register/distilled/etc).
+      3) Reshapes patch tokens from (B, Np, C) to (B, C, Hp, Wp).
+      4) Optionally applies channel-wise LayerNorm (DINOv3-style).
+
+    Args:
+      model: timm ViT-like model with .forward_features and .patch_embed.
+      x:     input tensor (B, 3, H, W) already preprocessed to the right size.
+      apply_norm: apply LayerNorm over channels if model has `model.norm` as nn.LayerNorm.
+      verbose: print helpful debugging info.
+
+    Returns:
+      fmap: torch.Tensor of shape (B, C, Hp, Wp)
+    """
+    # 1) Get final token sequence: shape should be (B, N_all, C)
+    seq = model.forward_features(x)
+    if seq.dim() != 3:
+        raise RuntimeError(f"Expected (B, N, C) from forward_features, got {tuple(seq.shape)}")
+    B, N_all, C = seq.shape
+
+    # 2) Infer patch size and patch grid (Hp, Wp)
+    ps = _infer_patch_size(model)
+    H, W = x.shape[-2:]
+    if H % ps != 0 or W % ps != 0:
+        raise RuntimeError(f"Input size {H}x{W} must be divisible by patch size {ps}.")
+    Hp, Wp = H // ps, W // ps
+    num_patches = Hp * Wp
+
+    # 3) Remove ALL prefix tokens (CLS + register + any others).
+    #    Prefer model.num_prefix_tokens if available; otherwise compute from counts.
+    n_prefix: Optional[int] = getattr(model, "num_prefix_tokens", None)
+    if n_prefix is None:
+        n_prefix = N_all - num_patches
+
+    if n_prefix < 0:
+        raise RuntimeError(
+            f"Total tokens ({N_all}) < expected patches ({num_patches}). "
+            f"Check input resolution or patch size."
+        )
+    if n_prefix > 0:
+        seq = seq[:, n_prefix:, :]  # keep only patch tokens
+
+    # Now seq is (B, num_patches, C) → reshape to (B, C, Hp, Wp)
+    if seq.shape[1] != num_patches:
+        raise RuntimeError(
+            f"After prefix removal, got {seq.shape[1]} tokens, expected {num_patches}."
+        )
+
+    fmap = seq.view(B, Hp, Wp, C).permute(0, 3, 1, 2).contiguous()  # (B, C, Hp, Wp)
+
+    # 4) Optional: DINOv3-style LayerNorm over channels
+    if apply_norm and hasattr(model, "norm") and isinstance(model.norm, torch.nn.LayerNorm):
+        fmap = fmap.permute(0, 2, 3, 1).contiguous()  # (B, Hp, Wp, C)
+        fmap = F.layer_norm(fmap, (C,))
+        fmap = fmap.permute(0, 3, 1, 2).contiguous()  # (B, C, Hp, Wp)
+
+    if verbose:
+        print(f"[last_layer_patch_features] x: {tuple(x.shape)}")
+        print(f"[last_layer_patch_features] patch_size: {ps} | grid: {Hp}x{Wp} ({num_patches} patches)")
+        print(f"[last_layer_patch_features] tokens: total={N_all}, prefix={n_prefix}, patch={seq.shape[1]}")
+        print(f"[last_layer_patch_features] fmap: {tuple(fmap.shape)}  (C={C})")
+
+    return fmap
+
+
+def _infer_patch_size(model: torch.nn.Module) -> int:
+    """
+    Infer ViT patch size from timm model.patch_embed.
+    Works for both conv-proj (has .proj.kernel_size) and explicit .patch_size attributes.
+    """
+    if not hasattr(model, "patch_embed"):
+        raise RuntimeError("Model lacks 'patch_embed'; cannot infer patch size.")
+    pe = model.patch_embed
+
+    # Common case: conv projection with kernel_size=(ps, ps)
+    if hasattr(pe, "proj") and hasattr(pe.proj, "kernel_size"):
+        ks = pe.proj.kernel_size
+        return ks[0] if isinstance(ks, (tuple, list)) else int(ks)
+
+    # Some models expose patch_size directly
+    if hasattr(pe, "patch_size"):
+        return pe.patch_size if isinstance(pe.patch_size, int) else pe.patch_size[0]
+
+    raise RuntimeError("Unable to infer patch size from model.patch_embed.")
+
+
 def to_numpy(feature_tensor: torch.Tensor) -> np.ndarray:
     """
     Convert a feature tensor (1, C, H, W) or (C, H, W) or (H, W) to numpy.
