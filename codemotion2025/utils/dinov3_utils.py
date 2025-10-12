@@ -422,7 +422,11 @@ def _maybe_blur(sim_hw: torch.Tensor, blur: bool) -> torch.Tensor:
 
 
 def _morphological_closing(mask_hw_u8: torch.Tensor, closing_kernel_size: int, kernel_size: Optional[int]) -> torch.Tensor:
-    """Apply morphological closing if requested."""
+    """Apply morphological closing if requested.
+    Morphological closing = dilation followed by erosion.
+    It fills small black holes and connects nearby white regions in a binary mask,
+    helping to smooth object boundaries without shrinking the overall area.
+    """
     if closing_kernel_size <= 0:
         return mask_hw_u8
     ksz = kernel_size or closing_kernel_size
@@ -431,7 +435,10 @@ def _morphological_closing(mask_hw_u8: torch.Tensor, closing_kernel_size: int, k
     return closed.squeeze(0).squeeze(0).to(torch.uint8)
 
 def _keep_largest_cc(mask_hw_u8: torch.Tensor, num_ccl_iterations: int) -> torch.Tensor:
-    """Keep only the largest connected component (foreground label != 0)."""
+    """Keep only the largest connected component (foreground label != 0).
+    Useful when multiple disjoint regions are detected but only the main object
+    (largest connected area) should be kept. All smaller regions are removed.
+    """
     if not mask_hw_u8.any():
         return mask_hw_u8
     labels = kc.connected_components(mask_hw_u8.float().unsqueeze(0).unsqueeze(0),
@@ -446,7 +453,11 @@ def _keep_largest_cc(mask_hw_u8: torch.Tensor, num_ccl_iterations: int) -> torch
     return kept
 
 def _area_filter(mask_hw_u8: torch.Tensor, min_area: int, num_ccl_iterations: int) -> torch.Tensor:
-    """Remove connected components with area < min_area."""
+    """Remove all connected components smaller than a given minimum area.
+    
+    This helps eliminate small noisy detections or isolated blobs that
+    are unlikely to be part of the main object.
+    """
     if min_area <= 0:
         return mask_hw_u8
     labels = kc.connected_components(mask_hw_u8.float().unsqueeze(0).unsqueeze(0),
@@ -462,7 +473,15 @@ def _area_filter(mask_hw_u8: torch.Tensor, min_area: int, num_ccl_iterations: in
     return filtered
 
 def _compute_threshold(sim_hw: torch.Tensor, tval: float, threshold_type: str) -> float:
-    """Compute the threshold value according to the chosen strategy."""
+    """
+    Compute the similarity threshold according to a chosen strategy.
+    
+    Supported strategies:
+      - "static": fixed threshold = tval
+      - "mean_std": mean(sim) + tval * std(sim)
+      - "max": tval * max(sim)
+    The result defines the cutoff above which pixels are considered foreground.
+    """
     if threshold_type == "static":
         thr = float(tval)
     elif threshold_type == "mean_std":
@@ -479,7 +498,11 @@ def _mask_by_threshold(sim_hw: torch.Tensor, thr: float) -> torch.Tensor:
     return (sim_hw >= thr).to(torch.uint8)
 
 def _mask_by_topk(sim_hw: torch.Tensor, percent: float) -> torch.Tensor:
-    """Keep top-k% highest similarity locations."""
+    """
+    Select the top-k% most similar locations from a similarity map.
+    
+    Keeps only the highest similarity pixels, useful when object scale
+    is unknown or the similarity distribution is skewed."""
     k = max(int(sim_hw.numel() * percent), 1)
     topk_vals, _ = torch.topk(sim_hw.flatten(), k)
     thr = topk_vals[-1]
