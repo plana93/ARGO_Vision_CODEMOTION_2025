@@ -28,7 +28,8 @@ dependencies = [
     #"timm",
     #"segment-anything @ git+https://github.com/facebookresearch/segment-anything.git",
     #"torchmetrics",
-    "termcolor"
+    "termcolor",
+    "kornia",
 ]
 
 # Questa sezione uv puoi tenerla, ma sappi che pip la ignora.
