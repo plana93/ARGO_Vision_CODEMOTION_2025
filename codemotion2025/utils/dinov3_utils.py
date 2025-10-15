@@ -19,68 +19,6 @@ from typing import Optional, Tuple, Union
 
 import torch.nn.functional as F
 
-# @torch.no_grad()
-# def last_layer_patch_features(
-#     model: torch.nn.Module,
-#     x: torch.Tensor,
-#     apply_norm: bool = True,
-#     verbose: bool = False,
-# ) -> torch.Tensor:
-#     """
-#     Estrarre la feature map finale allineata alle patch da un modello ViT (DINOv3 compatibile),
-#     in modo coerente con get_intermediate_layers(..., reshape=True).
-
-#     Output shape: (B, C, Hp, Wp)
-#     """
-
-#     # 1️⃣ Ottieni sequenza di token (B, N_all, C)
-#     seq = model.forward_features(x)
-#     if seq.dim() != 3:
-#         raise RuntimeError(f"Expected (B, N, C), got {tuple(seq.shape)}")
-#     B, N_all, C = seq.shape
-
-#     # 2️⃣ Recupera patch size dal modello
-#     ps = _infer_patch_size(model)
-#     H, W = x.shape[-2:]
-#     Hp, Wp = H // ps, W // ps
-#     num_patches = Hp * Wp
-
-#     # 3️⃣ Calcola quanti token extra (CLS + register) ci sono
-#     n_prefix = getattr(model, "num_prefix_tokens", None)
-#     if n_prefix is None:
-#         n_prefix = getattr(model, "n_storage_tokens", 0) + 1  # DINOv3 usa 5 token extra (1 cls + 4 reg)
-
-#     # Sanity check
-#     if N_all < num_patches + n_prefix:
-#         raise RuntimeError(
-#             f"Token mismatch: total={N_all}, expected >= {num_patches + n_prefix}"
-#         )
-
-#     # 4️⃣ Rimuovi token extra (CLS + registers)
-#     seq = seq[:, n_prefix:, :]  # (B, num_patches, C)
-
-#     # 5️⃣ Reshape → coerente con get_intermediate_layers(reshape=True)
-#     fmap = seq.reshape(B, Hp, Wp, C).permute(0, 3, 1, 2).contiguous()
-
-#     # 6️⃣ (Opzionale) LayerNorm canale-wise come DINOv3
-#     if apply_norm and hasattr(model, "norm") and isinstance(model.norm, torch.nn.LayerNorm):
-#         fmap = fmap.permute(0, 2, 3, 1)  # (B, Hp, Wp, C)
-#         fmap = F.layer_norm(fmap, (C,))
-#         fmap = fmap.permute(0, 3, 1, 2).contiguous()  # (B, C, Hp, Wp)
-
-#     # 7️⃣ Debug info
-#     if verbose:
-#         print(f"[last_layer_patch_features]")
-#         print(f"  Input: {tuple(x.shape)}")
-#         print(f"  Patch size: {ps} | Grid: {Hp}x{Wp} ({num_patches} patches)")
-#         print(f"  Tokens: total={N_all}, prefix={n_prefix}, patch={seq.shape[1]}")
-#         print(f"  Output fmap: {tuple(fmap.shape)} (C={C})")
-
-#     return fmap
-
-
-
-
 @torch.no_grad()
 def extract_from_layer_dinov3(
     img_in: Union[Image.Image, torch.Tensor],
